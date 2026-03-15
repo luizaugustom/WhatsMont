@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WhatsMont - Painel Evolution API</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="login-view" class="view">
+      <div class="login-box">
+        <h1>WhatsMont</h1>
+        <p class="subtitle">Chave de acesso</p>
+        <form id="login-form">
+          <input type="password" id="master-key" placeholder="Chave master" autocomplete="off" />
+          <button type="submit">Entrar</button>
+        </form>
+        <p id="login-error" class="error hidden"></p>
+      </div>
+    </div>
+    <div id="dashboard-view" class="view hidden">
+      <header class="header">
+        <h1>WhatsMont</h1>
+        <nav>
+          <a href="#" data-page="instances">Instâncias</a>
+          <a href="#" data-page="tokens">Tokens</a>
+          <a href="#" id="logout">Sair</a>
+        </nav>
+      </header>
+      <main id="dashboard-main"></main>
+    </div>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>
