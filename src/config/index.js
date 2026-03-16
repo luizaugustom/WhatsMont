@@ -6,6 +6,8 @@ const config = {
     url: (process.env.EVOLUTION_API_URL || 'http://localhost:8080').replace(/\/$/, ''),
     apiKey: process.env.EVOLUTION_API_KEY || '',
   },
+  whatsmontPublicUrl: (process.env.WHATSMONT_PUBLIC_URL || '').replace(/\/$/, ''),
+  evolutionPublicUrl: (process.env.EVOLUTION_PUBLIC_URL || process.env.EVOLUTION_API_URL || 'http://localhost:8080').replace(/\/$/, ''),
   port: parseInt(process.env.PORT || '3000', 10),
   corsOrigin: process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())

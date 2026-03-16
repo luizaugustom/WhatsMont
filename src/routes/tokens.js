@@ -1,7 +1,36 @@
 const express = require('express');
 const tokenService = require('../services/tokenService');
+const instanceRepository = require('../repositories/instanceRepository');
+const config = require('../config');
 
 const router = express.Router();
+
+function maskApiKey(key) {
+  if (!key || !String(key).trim()) return '***';
+  const s = String(key).trim();
+  return s.length <= 4 ? '***' : '***' + s.slice(-4);
+}
+
+function buildEnvExample(opts) {
+  const { whatsmontBaseUrl, evolutionBaseUrl, evolutionApiKeyMasked, instanceName, whatsmontTokenNote } = opts;
+  const lines = [
+    '# Variáveis para API externa (status/QR + envio de mensagens)',
+    '',
+    `WHATSMONT_BASE_URL=${whatsmontBaseUrl || 'https://whatsmont.seudominio.com'}`,
+    `# ${whatsmontTokenNote || 'Token obtido ao criar um token vinculado a esta instância no painel'}`,
+    'WHATSMONT_TOKEN=',
+    '',
+    `EVOLUTION_BASE_URL=${evolutionBaseUrl || 'http://localhost:8080'}`,
+    `# Mesma do .env do servidor Evolution (ex.: ${evolutionApiKeyMasked})`,
+    'EVOLUTION_API_KEY=',
+    '',
+    `EVOLUTION_INSTANCE_NAME=${instanceName || 'minha-instancia'}`,
+    '',
+    '# Se a Evolution estiver em subpath (ex.: /v1), inclua em EVOLUTION_BASE_URL.',
+    '# Evolution API v1: body de envio é textMessage: { text: "..." }.',
+  ];
+  return lines.join('\n');
+}
 
 router.get('/', (req, res, next) => {
   try {
@@ -17,6 +46,40 @@ router.get('/:id', (req, res, next) => {
     const row = tokenService.getToken(Number(req.params.id));
     if (!row) return res.status(404).json({ success: false, error: 'Token não encontrado' });
     res.json({ success: true, data: row });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.get('/:id/connection-info', (req, res, next) => {
+  try {
+    const token = tokenService.getToken(Number(req.params.id));
+    if (!token) return res.status(404).json({ success: false, error: 'Token não encontrado' });
+    const instance = instanceRepository.findById(token.instance_id);
+    if (!instance) return res.status(404).json({ success: false, error: 'Instância do token não encontrada' });
+    const whatsmontBaseUrl = config.whatsmontPublicUrl || '';
+    const evolutionBaseUrl = config.evolutionPublicUrl || '';
+    const evolutionApiKeyMasked = maskApiKey(config.evolution.apiKey);
+    const instanceName = instance.evolution_instance_name || '';
+    const whatsmontTokenNote = `Valor que você salvou ao criar este token (lembrete: ${token.token_mask || '****'})`;
+    const env_example = buildEnvExample({
+      whatsmontBaseUrl,
+      evolutionBaseUrl,
+      evolutionApiKeyMasked,
+      instanceName,
+      whatsmontTokenNote,
+    });
+    res.json({
+      success: true,
+      data: {
+        whatsmont_base_url: whatsmontBaseUrl,
+        evolution_base_url: evolutionBaseUrl,
+        evolution_api_key_masked: evolutionApiKeyMasked,
+        instance_name: instanceName,
+        token_mask: token.token_mask || '',
+        env_example,
+      },
+    });
   } catch (e) {
     next(e);
   }

@@ -8,12 +8,14 @@ const instancesRoutes = require('./instances');
 const tokensRoutes = require('./tokens');
 const connectionRoutes = require('./connection');
 const healthRoutes = require('./health');
+const configRoutes = require('./config');
 
 const router = express.Router();
 
 router.use('/health', healthRoutes);
 router.use('/auth', generalLimiter, authRoutes);
 
+router.use('/config', generalLimiter, authAdmin, configRoutes);
 router.use('/instances', generalLimiter, authAdmin, instancesRoutes);
 router.use('/tokens', generalLimiter, authAdmin, tokensRoutes);
 

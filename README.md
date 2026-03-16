@@ -66,6 +66,8 @@ Guarde a chave exibida (ou em `.master-key.txt`). Edite o `.env` para produção
 - `NODE_ENV=production`
 - `EVOLUTION_API_URL=http://127.0.0.1:8080`
 - `EVOLUTION_API_KEY=` (a mesma gerada pelo `ensure-env`)
+- `EVOLUTION_PUBLIC_URL=` (URL que as APIs externas usam para chamar a Evolution; ex.: `http://IP:8080` ou `https://evolution.seudominio.com`. Opcional; se não definida, usa EVOLUTION_API_URL)
+- `WHATSMONT_PUBLIC_URL=` (URL base do painel para APIs externas; ex.: `http://IP:3000` ou `https://whatsmont.seudominio.com`. Usada na tela "Variáveis de conexão")
 - `PORT=3000`
 - `CORS_ORIGIN=https://seudominio.com,https://outra-api.com` (origens dos seus sistemas/dashboard, separadas por vírgula)
 - `DB_PATH=/var/lib/whatsmont/data/whatsmont.db`

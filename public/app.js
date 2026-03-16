@@ -107,12 +107,14 @@ async function renderInstances() {
           </div>
           <span class="badge ${statusClass}">${escapeHtml(inst.status || 'close')}</span>
           <div class="card-actions">
+            <button class="btn btn-ghost btn-connection-info" data-id="${inst.id}" data-type="instance">Variáveis de conexão</button>
             <button class="btn btn-ghost btn-qr" data-id="${inst.id}">Ver QR</button>
             <button class="btn btn-danger btn-delete-instance" data-id="${inst.id}">Remover</button>
           </div>
         `;
         container.appendChild(card);
       });
+      container.querySelectorAll('.btn-connection-info').forEach((b) => b.addEventListener('click', () => showConnectionInfoModal('instance', Number(b.dataset.id))));
       container.querySelectorAll('.btn-qr').forEach((b) => b.addEventListener('click', () => showQrModal(Number(b.dataset.id))));
       container.querySelectorAll('.btn-delete-instance').forEach((b) => b.addEventListener('click', () => deleteInstance(Number(b.dataset.id))));
     }
@@ -143,6 +145,63 @@ function showQrModal(instanceId) {
       }
     })
     .catch(() => { qrWrap.innerHTML = '<p class="empty error">Erro ao obter QR.</p>'; });
+}
+
+function showConnectionInfoModal(type, id) {
+  const path = type === 'instance' ? '/instances/' + id + '/connection-info' : '/tokens/' + id + '/connection-info';
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.innerHTML = '<div class="modal modal-wide"><h3>Variáveis de conexão para API externa</h3><div class="connection-info-wrap">Carregando...</div><div class="modal-actions"><button class="btn btn-ghost close-modal">Fechar</button></div></div>';
+  document.body.appendChild(overlay);
+  const wrap = overlay.querySelector('.connection-info-wrap');
+  const close = () => overlay.remove();
+  overlay.querySelector('.close-modal').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+  api(path)
+    .then((res) => {
+      const d = res.data || {};
+      const tokenNote = type === 'token' && d.token_mask
+        ? 'Valor que você salvou ao criar este token (lembrete: ' + escapeHtml(d.token_mask) + ')'
+        : 'Token obtido ao criar um token vinculado a esta instância no painel';
+      wrap.innerHTML = `
+        <div class="connection-info-table">
+          <p><strong>WHATSMONT_BASE_URL</strong>: ${escapeHtml(d.whatsmont_base_url || '(configure WHATSMONT_PUBLIC_URL no .env do servidor)')}</p>
+          <p><strong>WHATSMONT_TOKEN</strong>: ${escapeHtml(tokenNote)}</p>
+          <p><strong>EVOLUTION_BASE_URL</strong>: ${escapeHtml(d.evolution_base_url || '')}</p>
+          <p><strong>EVOLUTION_API_KEY</strong>: ${escapeHtml(d.evolution_api_key_masked || '***')} (mesma do .env do servidor Evolution)</p>
+          <p><strong>EVOLUTION_INSTANCE_NAME</strong>: ${escapeHtml(d.instance_name || '')}</p>
+        </div>
+        <p class="connection-info-hint">Com essas variáveis no .env da API externa, status/QR e envio de mensagens funcionarão. Se a Evolution estiver em subpath, inclua em EVOLUTION_BASE_URL.</p>
+        <label class="connection-info-label">Bloco .env (copie para a API externa):</label>
+        <textarea class="connection-info-env" readonly rows="14">${escapeHtml(d.env_example || '')}</textarea>
+        <div class="modal-actions" style="margin-top:8px">
+          <button type="button" class="btn btn-primary btn-copy-env">Copiar .env</button>
+        </div>
+      `;
+      const textarea = wrap.querySelector('.connection-info-env');
+      wrap.querySelector('.btn-copy-env').addEventListener('click', () => {
+        const text = textarea.value;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => copyBtnFeedback(wrap));
+        } else {
+          textarea.select();
+          document.execCommand('copy');
+          copyBtnFeedback(wrap);
+        }
+      });
+    })
+    .catch((e) => {
+      wrap.innerHTML = '<p class="empty error">' + (e.data?.error || 'Erro ao carregar variáveis de conexão.') + '</p>';
+    });
+}
+
+function copyBtnFeedback(wrap) {
+  const btn = wrap.querySelector('.btn-copy-env');
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.textContent = 'Copiado!';
+  setTimeout(() => { btn.textContent = orig; }, 2000);
 }
 
 function showNewInstanceModal() {
@@ -232,12 +291,14 @@ async function renderTokens() {
           </div>
           <span class="badge ${t.active ? 'badge-open' : 'badge-close'}">${t.active ? 'Ativo' : 'Revogado'}</span>
           <div class="card-actions">
+            <button class="btn btn-ghost btn-connection-info-token" data-id="${t.id}">Variáveis de conexão</button>
             ${t.active ? '<button class="btn btn-ghost btn-revoke" data-id="' + t.id + '">Revogar</button>' : ''}
             <button class="btn btn-danger btn-delete-token" data-id="${t.id}">Excluir</button>
           </div>
         `;
         container.appendChild(card);
       });
+      container.querySelectorAll('.btn-connection-info-token').forEach((b) => b.addEventListener('click', () => showConnectionInfoModal('token', Number(b.dataset.id))));
       container.querySelectorAll('.btn-revoke').forEach((b) => b.addEventListener('click', () => revokeToken(Number(b.dataset.id))));
       container.querySelectorAll('.btn-delete-token').forEach((b) => b.addEventListener('click', () => deleteToken(Number(b.dataset.id))));
     }

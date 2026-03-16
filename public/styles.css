@@ -134,7 +134,24 @@ body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); col
   width: 100%;
   max-width: 420px;
 }
+.modal-wide { max-width: 560px; }
 .modal h3 { margin: 0 0 1rem; }
+.connection-info-table { margin-bottom: 1rem; font-size: 0.9rem; }
+.connection-info-table p { margin: 0.5rem 0; word-break: break-all; }
+.connection-info-hint { color: var(--text-muted); font-size: 0.85rem; margin: 0 0 0.75rem; }
+.connection-info-label { display: block; margin-bottom: 0.35rem; font-size: 0.9rem; color: var(--text-muted); }
+.connection-info-env {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: monospace;
+  font-size: 0.8rem;
+  resize: vertical;
+  min-height: 200px;
+}
 .modal label { display: block; margin-bottom: 0.35rem; font-size: 0.9rem; color: var(--text-muted); }
 .modal input, .modal select {
   width: 100%;
