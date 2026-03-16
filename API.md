@@ -166,3 +166,85 @@ curl -H "Authorization: Bearer token-retornado-ao-criar" http://localhost:3000/a
 ```bash
 curl -H "Authorization: Bearer token-retornado-ao-criar" http://localhost:3000/api/v1/connection/qr
 ```
+
+---
+
+## Configuração em APIs externas para envio de mensagens
+
+O WhatsMont gerencia **instâncias** e **tokens** (status e QR). O **envio de mensagens** é feito **diretamente na Evolution API**. Nas suas APIs externas, configure o seguinte.
+
+### 1. No painel WhatsMont (admin)
+
+1. Acesse o painel e faça login com a **MASTER_KEY**.
+2. Crie uma **instância** (uma por número WhatsApp) e conecte escaneando o QR.
+3. Em **Tokens** → **Criar token**: informe **label** (ex.: "Meu CRM") e **instance_id** da instância.
+4. **Copie o token** retornado (exibido só uma vez) e guarde em variável de ambiente na sua API externa (ex.: `WHATSMONT_TOKEN`).
+
+### 2. Na sua API externa – variáveis/config
+
+Guarde estes valores (ex.: em `.env` ou secrets):
+
+| Variável | Descrição |
+|----------|-----------|
+| `WHATSMONT_BASE_URL` | URL do painel, ex.: `https://seudominio.com` (sem `/api/v1`) |
+| `WHATSMONT_TOKEN` | Token de conexão criado no painel (Bearer usado nos endpoints de conexão) |
+| `EVOLUTION_BASE_URL` | URL da Evolution API (veja abaixo) |
+| `EVOLUTION_API_KEY` | Chave da Evolution (a mesma do `.env` do servidor WhatsMont, `EVOLUTION_API_KEY`) |
+
+- Para **status e QR**: sua API usa só `WHATSMONT_BASE_URL` + `WHATSMONT_TOKEN` nos endpoints abaixo.
+- Para **enviar mensagens**: sua API chama a **Evolution API** usando `EVOLUTION_BASE_URL` + `EVOLUTION_API_KEY` + **nome da instância** (obtido do status).
+
+### 3. Endpoints WhatsMont (status e QR)
+
+Use o token em todas as requisições:
+
+- **Base:** `GET {WHATSMONT_BASE_URL}/api/v1/connection/status`
+- **Header:** `Authorization: Bearer {WHATSMONT_TOKEN}`
+
+A resposta inclui `instanceName` — esse valor é usado na Evolution para enviar mensagens.
+
+Exemplo de resposta:
+```json
+{ "success": true, "data": { "state": "open", "instanceName": "minha-instancia" } }
+```
+
+### 4. Envio de mensagens via Evolution API
+
+Sua API externa deve chamar a **Evolution API** (não o WhatsMont):
+
+- **Obter o nome da instância:** `GET {WHATSMONT_BASE_URL}/api/v1/connection/status` com `Authorization: Bearer {WHATSMONT_TOKEN}` → usar `data.instanceName`.
+- **Enviar texto:**  
+  `POST {EVOLUTION_BASE_URL}/message/sendText/{instanceName}`  
+  - **Headers:** `apikey: {EVOLUTION_API_KEY}`, `Content-Type: application/json`  
+  - **Body (JSON):** `{ "number": "5511999999999", "text": "Sua mensagem" }`  
+  - Número com código do país, sem `+`.
+
+Exemplo (curl):
+```bash
+curl -X POST "https://evolution.seudominio.com/message/sendText/minha-instancia" \
+  -H "apikey: SUA_EVOLUTION_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"number":"5511999999999","text":"Olá!"}'
+```
+
+### 5. Expor a Evolution para a API externa (quando não está no mesmo servidor)
+
+Por padrão a Evolution fica só em `127.0.0.1:8080` no servidor. Se sua **API externa roda em outro servidor**, é preciso expor a Evolution (ex.: por Nginx) e usar a mesma `EVOLUTION_API_KEY`:
+
+1. No Nginx do servidor onde roda a Evolution, crie um vhost (ex.: `evolution.seudominio.com`) fazendo proxy para `http://127.0.0.1:8080`.
+2. Instale SSL (Certbot) para esse subdomínio.
+3. Na sua API externa defina:
+   - `EVOLUTION_BASE_URL=https://evolution.seudominio.com`
+   - `EVOLUTION_API_KEY` = valor do `EVOLUTION_API_KEY` do `.env` do WhatsMont (recomendado: repasse por variável de ambiente/secrets, nunca em código).
+
+Se a **API externa rodar no mesmo servidor** que o WhatsMont/Evolution, pode usar:
+
+- `EVOLUTION_BASE_URL=http://127.0.0.1:8080`
+- `EVOLUTION_API_KEY` = mesmo valor do `.env` do projeto.
+
+### Resumo rápido
+
+1. **Painel:** criar instância → conectar WhatsApp → criar token → guardar token.
+2. **API externa:** configurar `WHATSMONT_BASE_URL`, `WHATSMONT_TOKEN`, `EVOLUTION_BASE_URL`, `EVOLUTION_API_KEY`.
+3. **Status/QR:** `GET .../api/v1/connection/status` e `.../connection/qr` no WhatsMont com o token.
+4. **Enviar mensagem:** obter `instanceName` do status; `POST {EVOLUTION_BASE_URL}/message/sendText/{instanceName}` com `apikey` e body `number` + `text`.

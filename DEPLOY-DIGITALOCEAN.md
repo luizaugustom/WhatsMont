@@ -294,12 +294,16 @@ Crie o site:
 nano /etc/nginx/sites-available/whatsmont
 ```
 
-Conteúdo (substitua `seudominio.com` pelo seu domínio ou use o IP para teste):
+Conteúdo do arquivo (use **apenas** o bloco abaixo; não escreva nada como `nano` ou `nginx` dentro do arquivo):
+
+- **Com domínio:** troque `seudominio.com` pelo seu domínio.
+- **Só com IP:** troque `seudominio.com` pelo IP do servidor (ex.: `134.199.187.88`).
+- O `proxy_pass` deve ser sempre `http://127.0.0.1:3000` (aplicação local).
 
 ```nginx
 server {
     listen 80;
-    server_name seudominio.com;
+    server_name 134.199.187.88;
     location / {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
