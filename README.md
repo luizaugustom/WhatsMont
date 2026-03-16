@@ -24,9 +24,15 @@ npm run start:all
 - O script sobe o container da Evolution (Docker) e em seguida inicia o painel na porta 3000.
 - Em **produção**, não use `start-all.js` no PM2 (Docker e Node no mesmo processo atrapalha reinício). Suba a Evolution com `docker compose up -d evolution-api` e o painel com `pm2 start ecosystem.config.cjs`.
 
-## Produção na VPS (HostGator ou similar)
+## Produção na VPS (DigitalOcean, HostGator ou similar)
 
-### Requisitos na VPS
+### Deploy na DigitalOcean (passo a passo completo)
+
+Para hospedar na **VPS da DigitalOcean** (Droplet Ubuntu, Nginx, SSL, PM2 e Docker), use o guia dedicado:
+
+**[DEPLOY-DIGITALOCEAN.md](DEPLOY-DIGITALOCEAN.md)** — criação do Droplet, instalação de Node.js, Docker, PM2, Nginx, Certbot, envio do projeto, configuração do `.env`, migrations, subida da Evolution e do painel, firewall e checklist.
+
+### Requisitos na VPS (genérico)
 
 - Acesso SSH (root ou usuário com sudo).
 - Node.js 18+ (instale se não tiver: `apt update && apt install -y nodejs npm` ou use nvm).
@@ -83,7 +89,7 @@ npm run migrate
 docker compose up -d evolution-api
 ```
 
-Verifique: `curl -H "apikey: SUA_EVOLUTION_API_KEY" http://127.0.0.1:8080/instance/fetchInstances`. **Não exponha a porta 8080 na internet** (apenas localhost).
+Verifique: `curl -H "apikey: SUA_EVOLUTION_API_KEY" http://127.0.0.1:8080/instance/fetchInstances`. O `docker-compose.yml` já expõe a Evolution apenas em **127.0.0.1:8080** (não fica acessível pela internet).
 
 **6. Subir o painel com PM2:**
 
